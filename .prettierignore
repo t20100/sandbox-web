@@ -1,0 +1,4 @@
+/build/
+/storybook-static/
+/packages/**/dist/
+/package-lock.json
