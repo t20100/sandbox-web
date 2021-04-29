@@ -1,0 +1,9 @@
+flask
+flask_compress
+flask_cors
+flask_socketio
+hdf5plugin
+h5py
+jupyterlab_hdf5
+numpy
+orjson
