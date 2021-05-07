@@ -4,6 +4,6 @@ flask_cors
 flask_socketio
 hdf5plugin
 h5py
-jupyterlab_hdf5
+jupyterlab_hdf
 numpy
 orjson
