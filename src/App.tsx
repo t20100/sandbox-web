@@ -21,13 +21,15 @@ class H5DataProvider {
   public constructor(url: string, filepath: string) {
     this.filepath = filepath;
     this.client = axios.create({
-      baseURL: `${url}/hdf`,
+      baseURL: `${url}`,
     });
   }
 
   public async getValue(path: string, selection?: string): Promise<unknown> {
     const { data } = await this.client.get<unknown>(
-      `/data/${this.filepath}?uri=${path}${selection && `&ixstr=${selection}`}`
+      `/data/${this.filepath}?path=${path}${
+        selection && `&selection=${selection}`
+      }`
     );
     console.log(data);
     // const { data, shape } = fromArrayBuffer(response);
@@ -115,10 +117,10 @@ const image2URL = 'http://localhost:5000/npy/data/public/image2.npy';
 
 const h5file = 'public/data/BM18/MRI3D.h5';
 const h5path = '/data_128';
-const rootURL = 'http://localhost:5000/';
-const dataURL = rootURL + '/hdf/data/';
-const metaURL = rootURL + '/hdf/meta/';
-const statsURL = rootURL + 'hdf/stats/';
+const rootURL = 'http://localhost:8888';
+const dataURL = rootURL + '/data/';
+const metaURL = rootURL + '/meta/';
+const statsURL = rootURL + '/stats/';
 
 // Data hook
 /*
@@ -146,8 +148,8 @@ function useSliceData(
     if (newValue !== slice) {
       setSlice(newValue);
       const ixstr = `${':,'.repeat(dim)}${newValue}`;
-      const currentDataURL = `${dataURL}${h5file}?uri=${h5path}&ixstr=${ixstr}`;
-      const currentStatsURL = `${statsURL}${h5file}?uri=${h5path}&ixstr=${ixstr}`;
+      const currentDataURL = `${dataURL}${h5file}?path=${h5path}&selection=${ixstr}&format=npy`;
+      const currentStatsURL = `${statsURL}${h5file}?path=${h5path}&selection=${ixstr}`;
       Promise.all([npyFetch(currentDataURL), axios.get(currentStatsURL)]).then(
         (values) => {
           setData(values[0]);
@@ -189,8 +191,8 @@ function App() {
   useEffect(() => {
     if (shape[0] === 0) {
       Promise.all([
-        axios.get(`${metaURL}${h5file}?uri=${h5path}`),
-        axios.get(`${statsURL}${h5file}?uri=${h5path}`),
+        axios.get(`${metaURL}${h5file}?path=${h5path}`),
+        axios.get(`${statsURL}${h5file}?path=${h5path}`),
       ]).then((values) => {
         const shape = values[0].data.shape;
         setShape(shape);
