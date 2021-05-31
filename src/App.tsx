@@ -147,15 +147,10 @@ function useSliceData(
   function setNewSlice(newValue: number) {
     if (newValue !== slice) {
       setSlice(newValue);
-      const ixstr = `${':,'.repeat(dim)}${newValue}`;
-      const currentDataURL = `${dataURL}${h5file}?path=${h5path}&selection=${ixstr}&format=npy`;
-      const currentStatsURL = `${statsURL}${h5file}?path=${h5path}&selection=${ixstr}`;
-      Promise.all([npyFetch(currentDataURL), axios.get(currentStatsURL)]).then(
-        (values) => {
-          setData(values[0]);
-          setDomain([values[1].data.min, values[1].data.max]);
-        }
-      );
+      const selection = `${':,'.repeat(dim)}${newValue}`;
+      npyFetch(
+        `${dataURL}${h5file}?path=${h5path}&selection=${selection}&format=npy`
+      ).then(setData);
     }
   }
   return [data, domain, setNewSlice];
