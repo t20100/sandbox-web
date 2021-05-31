@@ -153,7 +153,7 @@ function useSliceData(
       Promise.all([npyFetch(currentDataURL), axios.get(currentStatsURL)]).then(
         (values) => {
           setData(values[0]);
-          setDomain([values[1].data.nanmin, values[1].data.nanmax]);
+          setDomain([values[1].data.min, values[1].data.max]);
         }
       );
     }
@@ -199,7 +199,7 @@ function App() {
         setNewSliceAxial(Math.round(shape[0] / 2));
         setNewSliceSide(Math.round(shape[1] / 2));
         setNewSliceFront(Math.round(shape[2] / 2));
-        setDomain([values[1].data.nanmin, values[1].data.nanmax] as Domain);
+        setDomain([values[1].data.min, values[1].data.max] as Domain);
       });
     }
   });
