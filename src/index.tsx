@@ -3,6 +3,11 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { getLCP, getFID, getCLS } from 'web-vitals';
+
+getCLS(console.log);
+getFID(console.log);
+getLCP(console.log);
 
 ReactDOM.render(
   <React.StrictMode>

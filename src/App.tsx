@@ -140,10 +140,9 @@ function useSliceData(
   h5file: string,
   h5path: string,
   dim: number
-): [ndarray, Domain, (newValue: number) => void] {
+): [ndarray, (newValue: number) => void] {
   const [slice, setSlice] = useState(-1);
   const [data, setData] = useState(ndarray(new Float32Array(0), [0, 0]));
-  const [domain, setDomain] = useState([0, 1] as Domain);
   function setNewSlice(newValue: number) {
     if (newValue !== slice) {
       setSlice(newValue);
@@ -153,7 +152,7 @@ function useSliceData(
       ).then(setData);
     }
   }
-  return [data, domain, setNewSlice];
+  return [data, setNewSlice];
 }
 
 function App() {
@@ -166,21 +165,9 @@ function App() {
 
   const [domain, setDomain] = useState([0, 1] as Domain);
 
-  const [dataAxial, domainAxial, setNewSliceAxial] = useSliceData(
-    h5file,
-    h5path,
-    axialDim
-  );
-  const [dataFront, domainFront, setNewSliceFront] = useSliceData(
-    h5file,
-    h5path,
-    frontDim
-  );
-  const [dataSide, domainSide, setNewSliceSide] = useSliceData(
-    h5file,
-    h5path,
-    sideDim
-  );
+  const [dataAxial, setNewSliceAxial] = useSliceData(h5file, h5path, axialDim);
+  const [dataFront, setNewSliceFront] = useSliceData(h5file, h5path, frontDim);
+  const [dataSide, setNewSliceSide] = useSliceData(h5file, h5path, sideDim);
 
   const [shape, setShape] = useState([0, 0, 0]);
   useEffect(() => {
