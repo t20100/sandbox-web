@@ -1,5 +1,16 @@
+.Tabs {
+  display: block;
+}
 
-.App {
+.ImageVis {
+  display: 'inline';
+}
+
+.ImageViewer {
+  display: block;
+}
+
+.SlideViewer {
   display: grid;
   grid-template-columns: 50% 50%;
   grid-template-rows: 50% 50%;

@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from 'react';
 import './App.css';
 import Slider from '@material-ui/core/Slider';
+import ImageVis from './ImageVis';
 
 class H5DataProvider {
   public readonly filepath: string;
@@ -59,11 +60,11 @@ function SliceVis(props: Props) {
 
   const [rows, cols] = dataArray.shape;
   const abscissaConfig = {
-    domain: [0, rows - 1] as Domain,
+    visDomain: [0, rows - 1] as Domain,
     showGrid: false,
   };
   const ordinateConfig = {
-    domain: [0, cols - 1] as Domain,
+    visDomain: [0, cols - 1] as Domain,
     showGrid: false,
   };
 
@@ -72,7 +73,7 @@ function SliceVis(props: Props) {
       abscissaConfig={abscissaConfig}
       ordinateConfig={ordinateConfig}
       // aspectRatio={1}
-      canvasTitle={title}
+      title={title}
     >
       <PanZoomMesh />
       <HeatmapMesh
@@ -118,9 +119,9 @@ const image2URL = 'http://localhost:5000/npy/data/public/image2.npy';
 const h5file = 'public/data/BM18/MRI3D.h5';
 const h5path = '/data_128';
 const rootURL = 'http://localhost:8888';
-const dataURL = rootURL + '/data/';
-const metaURL = rootURL + '/meta/';
-const statsURL = rootURL + '/stats/';
+const dataURL = `${rootURL}/data/`;
+const metaURL = `${rootURL}/meta/`;
+const statsURL = `${rootURL}/stats/`;
 
 // Data hook
 /*
@@ -176,7 +177,7 @@ function App() {
         axios.get(`${metaURL}${h5file}?path=${h5path}`),
         axios.get(`${statsURL}${h5file}?path=${h5path}`),
       ]).then((values) => {
-        const shape = values[0].data.shape;
+        const { shape } = values[0].data;
         setShape(shape);
         setNewSliceAxial(Math.round(shape[0] / 2));
         setNewSliceSide(Math.round(shape[1] / 2));
@@ -186,80 +187,124 @@ function App() {
     }
   });
 
+  const [activeTab, setActiveTab] = useState('2D');
+
   return (
-    <div className="App">
-      <div className="Tools">
-        <Slider
-          orientation="vertical"
-          defaultValue={0}
-          aria-labelledby="axial-slider"
-          valueLabelDisplay="on"
-          step={1}
-          marks
-          min={0}
-          max={shape[axialDim] - 1}
-          onChange={(event, newValue) => setNewSliceAxial(newValue as number)}
-        />
-        <SliceVis
-          dataArray={dataAxial}
-          domain={domain}
-          title="Axial"
-          scaleType={scaleType}
-          colorMap={colorMap}
-          invertColorMap={invertColorMap}
-        />
+    <div>
+      <div className="Tabs">
+        <button
+          type="button"
+          style={{ fontWeight: activeTab !== '3D' ? undefined : 'bold' }}
+          onClick={() => {
+            setActiveTab('3D');
+          }}
+        >
+          3D
+        </button>
+        <button
+          type="button"
+          style={{ fontWeight: activeTab !== '2D' ? undefined : 'bold' }}
+          onClick={() => {
+            setActiveTab('2D');
+          }}
+        >
+          2D
+        </button>
       </div>
-      <div className="Tools">
-        <ColorBar
-          domain={domain}
-          scaleType={scaleType}
-          colorMap={colorMap}
-          invertColorMap={invertColorMap}
-          withBounds
-        />
-      </div>
-      <div className="Tools">
-        <Slider
-          orientation="vertical"
-          defaultValue={0}
-          aria-labelledby="front-slider"
-          valueLabelDisplay="on"
-          step={1}
-          marks
-          min={0}
-          max={shape[frontDim] - 1}
-          onChange={(event, newValue) => setNewSliceFront(newValue as number)}
-        />
-        <SliceVis
-          dataArray={dataFront}
-          domain={domain}
-          title="Front"
-          scaleType={scaleType}
-          colorMap={colorMap}
-          invertColorMap={invertColorMap}
-        />
-      </div>
-      <div className="Tools">
-        <SliceVis
-          dataArray={dataSide}
-          domain={domain}
-          title="Side"
-          scaleType={scaleType}
-          colorMap={colorMap}
-          invertColorMap={invertColorMap}
-        />
-        <Slider
-          orientation="vertical"
-          defaultValue={0}
-          aria-labelledby="side-slider"
-          valueLabelDisplay="on"
-          step={1}
-          marks
-          min={0}
-          max={shape[sideDim] - 1}
-          onChange={(event, newValue) => setNewSliceSide(newValue as number)}
-        />
-      </div>
+      {activeTab === '2D' && (
+        <div className="ImageViewer">
+          <ImageVis
+            dataArray={dataAxial}
+            domain={domain}
+            title="Radio"
+            scaleType={scaleType}
+            colorMap={colorMap}
+            invertColorMap={invertColorMap}
+          />
+        </div>
+      )}
+      {activeTab === '3D' && (
+        <div className="SlideViewer">
+          <div className="Tools">
+            <Slider
+              orientation="vertical"
+              defaultValue={0}
+              aria-labelledby="axial-slider"
+              valueLabelDisplay="on"
+              step={1}
+              marks
+              min={0}
+              max={shape[axialDim] - 1}
+              onChange={(event, newValue) =>
+                setNewSliceAxial(newValue as number)
+              }
+            />
+            <SliceVis
+              dataArray={dataAxial}
+              domain={domain}
+              title="Axial"
+              scaleType={scaleType}
+              colorMap={colorMap}
+              invertColorMap={invertColorMap}
+            />
+          </div>
+          <div className="Tools">
+            <ColorBar
+              domain={domain}
+              scaleType={scaleType}
+              colorMap={colorMap}
+              invertColorMap={invertColorMap}
+              withBounds
+            />
+          </div>
+          <div className="Tools">
+            <Slider
+              orientation="vertical"
+              defaultValue={0}
+              aria-labelledby="front-slider"
+              valueLabelDisplay="on"
+              step={1}
+              marks
+              min={0}
+              max={shape[frontDim] - 1}
+              onChange={(event, newValue) =>
+                setNewSliceFront(newValue as number)
+              }
+            />
+            <SliceVis
+              dataArray={dataFront}
+              domain={domain}
+              title="Front"
+              scaleType={scaleType}
+              colorMap={colorMap}
+              invertColorMap={invertColorMap}
+            />
+          </div>
+          <div className="Tools">
+            <SliceVis
+              dataArray={dataSide}
+              domain={domain}
+              title="Side"
+              scaleType={scaleType}
+              colorMap={colorMap}
+              invertColorMap={invertColorMap}
+            />
+            <Slider
+              orientation="vertical"
+              defaultValue={0}
+              aria-labelledby="side-slider"
+              valueLabelDisplay="on"
+              step={1}
+              marks
+              min={0}
+              max={shape[sideDim] - 1}
+              onChange={(event, newValue) =>
+                setNewSliceSide(newValue as number)
+              }
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
