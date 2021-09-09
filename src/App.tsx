@@ -1,4 +1,4 @@
-import ndarray from 'ndarray';
+import ndarray, { NdArray } from 'ndarray';
 import { fromArrayBuffer } from 'numpy-parser';
 import axios, { AxiosInstance } from 'axios';
 import {
@@ -40,7 +40,7 @@ class H5DataProvider {
 }
 
 interface Props {
-  dataArray: ndarray;
+  dataArray: NdArray;
   domain: Domain;
   title?: string;
   scaleType?: ScaleType;
@@ -90,7 +90,7 @@ function SliceVis(props: Props) {
 }
 
 // numpy like
-function npRandom(shape: number[]): ndarray {
+function npRandom(shape: number[]): NdArray<Float32Array> {
   const size = shape.reduce(
     (accumulator, currentValue) => accumulator * currentValue
   );
@@ -103,7 +103,7 @@ function npRandom(shape: number[]): ndarray {
 
 // download
 
-async function npyFetch(url: string): Promise<ndarray> {
+async function npyFetch(url: string): Promise<NdArray> {
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();
   const { data, shape } = fromArrayBuffer(arrayBuffer);
@@ -125,7 +125,7 @@ const statsURL = `${rootURL}/stats/`;
 
 // Data hook
 /*
-function useData(timeout: number): [ndarray, Domain] {
+function useData(timeout: number): [NdArray, Domain] {
   const [count, setCount] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => {
@@ -141,16 +141,17 @@ function useSliceData(
   h5file: string,
   h5path: string,
   dim: number
-): [ndarray, (newValue: number) => void] {
+): [NdArray, (newValue: number) => void] {
   const [slice, setSlice] = useState(-1);
   const [data, setData] = useState(ndarray(new Float32Array(0), [0, 0]));
   function setNewSlice(newValue: number) {
     if (newValue !== slice) {
       setSlice(newValue);
-      const selection = `${':,'.repeat(dim)}${newValue}`;
+      /* const selection = `${':,'.repeat(dim)}${newValue}`;
       npyFetch(
         `${dataURL}${h5file}?path=${h5path}&selection=${selection}&format=npy`
-      ).then(setData);
+      ).then(setData);*/
+      setData(npRandom([128, 128]));
     }
   }
   return [data, setNewSlice];
@@ -170,7 +171,8 @@ function App() {
   const [dataFront, setNewSliceFront] = useSliceData(h5file, h5path, frontDim);
   const [dataSide, setNewSliceSide] = useSliceData(h5file, h5path, sideDim);
 
-  const [shape, setShape] = useState([0, 0, 0]);
+  /* const [shape, setShape] = useState([0, 0, 0]);*/
+  const [shape, setShape] = useState([128, 128, 128]);
   useEffect(() => {
     if (shape[0] === 0) {
       Promise.all([
@@ -214,7 +216,9 @@ function App() {
       {activeTab === '2D' && (
         <div className="ImageViewer">
           <ImageVis
-            dataArray={dataAxial}
+            dataShape={[2048, 2048]}
+            abscissaDomain={[0, 2048]}
+            ordinateDomain={[0, 2048]}
             domain={domain}
             title="Radio"
             scaleType={scaleType}
