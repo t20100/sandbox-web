@@ -11,6 +11,8 @@ import styles from './ImageVis.module.css';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useState, useMemo } from 'react';
 import { scaleLinear } from '@visx/scale';
+import ndarray, { NdArray } from 'ndarray';
+import { RedFormat, DataTexture, FloatType } from 'three';
 
 export declare type Shape = [number, number];
 
@@ -57,7 +59,7 @@ interface VisibleExtent {
 }
 
 function useVisibleExtent(): VisibleExtent {
-  // re-render on zoom&pan
+  // re-render on zoom&pan: TODO issue here => 2 renderings
   const [previous_zoom, setZoom] = useState(1);
   const [previous_position, setPosition] = useState({ x: 0, y: 0, z: 0 });
 
@@ -104,6 +106,8 @@ interface VisibleLODSlice {
   ySlice: Domain; // Slice for base LOD as [begin, end[
   xLODSlice: Domain; // Slice at given LOD as [begin, end[
   yLODSlice: Domain; // Slice at given LOD as [begin, end[
+  xData: Domain;
+  yData: Domain;
 }
 
 function getVisibleLODSlice(
@@ -173,7 +177,43 @@ function getVisibleLODSlice(
     ySlice,
     xLODSlice,
     yLODSlice,
+    xData: xVisibleData,
+    yData: yVisibleData,
   };
+}
+
+function mandelbrot(
+  dataShape: Shape,
+  abscissaDomain: Domain,
+  ordinateDomain: Domain,
+  niteration = 100
+): NdArray {
+  const [height, width] = dataShape;
+  const data = ndarray(new Float32Array(width * height), dataShape);
+
+  const colStep = (abscissaDomain[1] - abscissaDomain[0]) / width;
+  const rowStep = (ordinateDomain[1] - ordinateDomain[0]) / height;
+
+  for (let row = 0; row < height; row++) {
+    const cImag = ordinateDomain[0] + row * rowStep;
+    for (let col = 0; col < width; col++) {
+      const cReal = abscissaDomain[0] + col * colStep;
+      let z = [cReal, cImag];
+      let z2 = [cReal ** 2, cImag ** 2];
+      for (let i = 1; i < niteration; i++) {
+        z = [z2[0] - z2[1] + cReal, 2 * z[0] * z[1] + cImag];
+        z2 = [z[0] ** 2, z[1] ** 2];
+        if (z2[0] + z2[1] > 4) {
+          data.set(row, col, i / niteration);
+          break;
+        }
+      }
+      if (data.get(row, col) === 0) {
+        data.set(row, col, 1);
+      }
+    }
+  }
+  return data;
 }
 
 function MyMesh(props: MyMeshProps) {
@@ -211,14 +251,6 @@ function MyMesh(props: MyMeshProps) {
   if (visibleSlice === undefined) {
     return null; // nothing to display
   }
-  console.log(
-    'lod',
-    visibleSlice.levelOfDetail,
-    'x',
-    visibleSlice.xSlice,
-    'y',
-    visibleSlice.ySlice
-  );
 
   const [rows, cols] = dataShape;
 
@@ -244,13 +276,36 @@ function MyMesh(props: MyMeshProps) {
     (visibleSlice.ySlice[0] === 0 && visibleSlice.ySlice[1] === cols + 1
       ? visSize.height / 2
       : height / (2 * zoom));
-  console.log('coords', xMeshMin, xMeshMax, yMeshMin, yMeshMax);
+
+  const imageShape: Domain = [
+    visibleSlice.yLODSlice[1] - visibleSlice.yLODSlice[0],
+    visibleSlice.xLODSlice[1] - visibleSlice.xLODSlice[0],
+  ];
+
+  const data = mandelbrot(imageShape, visibleSlice.xData, visibleSlice.yData);
+  const dataTexture = new DataTexture(
+    Float32Array.from(data.data), // TODO copy here?
+    data.shape[1],
+    data.shape[0],
+    RedFormat,
+    FloatType
+  );
 
   const shader = {
     uniforms: {
-      niteration: { value: 500 },
-      offset: { type: 'v', value: [-2, -1.5] },
-      size: { type: 'v', value: [3, 3] },
+      data: { value: dataTexture },
+      /* niteration: { value: 500 },
+      offset: {
+        type: 'v',
+        value: [visibleSlice.xData[0], visibleSlice.yData[0]],
+      },
+      size: {
+        type: 'v',
+        value: [
+          visibleSlice.xData[1] - visibleSlice.xData[0],
+          visibleSlice.yData[1] - visibleSlice.yData[0],
+        ],
+      },*/
     },
     vertexShader: `
       varying vec2 coords;
@@ -261,26 +316,34 @@ function MyMesh(props: MyMeshProps) {
       }
     `,
     fragmentShader: `
+      varying vec2 coords;
+      uniform sampler2D data;
+
+      /*
       uniform int niteration;
       uniform vec2 offset;
       uniform vec2 size;
 
-      varying vec2 coords;
-
       float mandelbrot(vec2 c) {
         vec2 z = vec2(c.x, c.y);
-        int index;
-        for (index=0; index<=niteration; index++) {
+        int stop = 0;
+        for (int index=0; index<=niteration; index++) {
           z = vec2(z.x*z.x - z.y*z.y, 2.0 * z.x * z.y) + c;
+          if ((z.x*z.x + z.y*z.y) <= 4.0) {
+            stop = index;
+          }
         }
 
-        return (z.x*z.x + z.y*z.y) <= 4.0 ? float(index) : 0.0;
+        return float(stop == niteration ? niteration : stop);
       }
+      */
 
       void main() {
-        float value = mandelbrot(coords * size + offset);
-        float intensity = value / float(niteration);
+        //float value = mandelbrot(coords * size + offset);
+        //float intensity = value / float(niteration);
+        float intensity = texture2D(data, coords).r;
         gl_FragColor = vec4(intensity, intensity, intensity, 1.);
+
         //gl_FragColor = vec4(coords.x <= 0.5 ? 0. : 1., coords.y<=0.5 ? 0.: 1., 0, 1);
       }
     `,

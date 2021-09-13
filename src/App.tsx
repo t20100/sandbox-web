@@ -216,9 +216,9 @@ function App() {
       {activeTab === '2D' && (
         <div className="ImageViewer">
           <ImageVis
-            dataShape={[2048, 2048]}
-            abscissaDomain={[0, 2048]}
-            ordinateDomain={[0, 2048]}
+            dataShape={[150_000, 150_000]}
+            abscissaDomain={[-2.5, 1.5]}
+            ordinateDomain={[-2, 2]}
             domain={domain}
             title="Radio"
             scaleType={scaleType}
