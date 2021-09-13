@@ -7,7 +7,7 @@ import {
   Domain,
   useAxisSystemContext,
 } from '@h5web/lib';
-import styles from './ImageVis.module.css';
+import styles from './HeatmapLODVis.module.css';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useState, useMemo } from 'react';
 import { scaleLinear } from '@visx/scale';
@@ -16,10 +16,19 @@ import { RedFormat, DataTexture, FloatType } from 'three';
 
 export declare type Shape = [number, number];
 
-interface MyMeshProps {
+interface HeatmapLODMeshProps {
   dataShape: Shape;
   abscissaDomain: Domain;
   ordinateDomain: Domain;
+  onChange: (
+    levelOfDetail: number,
+    xSlice: Domain,
+    ySlice: Domain,
+    xLODSlice: Domain,
+    yLODSlice: Domain,
+    xData: Domain,
+    yData: Domain
+  ) => NdArray;
 }
 
 function getIntersectionDomain(
@@ -216,8 +225,8 @@ function mandelbrot(
   return data;
 }
 
-function MyMesh(props: MyMeshProps) {
-  const { dataShape, abscissaDomain, ordinateDomain } = props;
+function HeatmapLODMesh(props: HeatmapLODMeshProps) {
+  const { dataShape, abscissaDomain, ordinateDomain, onChange } = props;
 
   const xDataToArrayScale = useMemo(
     () =>
@@ -278,12 +287,17 @@ function MyMesh(props: MyMeshProps) {
       : height / (2 * zoom));
 
   // TODO fix array jumps
-  const imageShape: Domain = [
-    visibleSlice.yLODSlice[1] - visibleSlice.yLODSlice[0],
-    visibleSlice.xLODSlice[1] - visibleSlice.xLODSlice[0],
-  ];
 
-  const data = mandelbrot(imageShape, visibleSlice.xData, visibleSlice.yData);
+  const data = onChange(
+    visibleSlice.levelOfDetail,
+    visibleSlice.xSlice,
+    visibleSlice.ySlice,
+    visibleSlice.xLODSlice,
+    visibleSlice.yLODSlice,
+    visibleSlice.xData,
+    visibleSlice.yData
+  );
+
   const dataTexture = new DataTexture(
     Float32Array.from(data.data), // TODO copy here?
     data.shape[1],
@@ -372,7 +386,24 @@ interface Props {
   invertColorMap?: boolean;
 }
 
-function ImageVis(props: Props) {
+function onHeatmapLODMeshChange(
+  levelOfDetail: number,
+  xSlice: Domain,
+  ySlice: Domain,
+  xLODSlice: Domain,
+  yLODSlice: Domain,
+  xData: Domain,
+  yData: Domain
+) {
+  const imageShape: Domain = [
+    yLODSlice[1] - yLODSlice[0],
+    xLODSlice[1] - xLODSlice[0],
+  ];
+
+  return mandelbrot(imageShape, xData, yData);
+}
+
+function HeatmapLODVis(props: Props) {
   const {
     dataShape,
     abscissaDomain,
@@ -405,10 +436,11 @@ function ImageVis(props: Props) {
         title={title}
       >
         <PanZoomMesh />
-        <MyMesh
+        <HeatmapLODMesh
           dataShape={dataShape}
           abscissaDomain={abscissaDomainDefined}
           ordinateDomain={ordinateDomainDefined}
+          onChange={onHeatmapLODMeshChange}
         />
       </VisCanvas>
       <ColorBar
@@ -422,5 +454,5 @@ function ImageVis(props: Props) {
   );
 }
 
-export type { Props as ImageVisProps };
-export default ImageVis;
+export type { Props as HeatmapLODVisProps };
+export default HeatmapLODVis;

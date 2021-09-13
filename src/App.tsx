@@ -13,7 +13,7 @@ import {
 import { useEffect, useState } from 'react';
 import './App.css';
 import Slider from '@material-ui/core/Slider';
-import ImageVis from './ImageVis';
+import HeatmapLODVis from './HeatmapLODVis';
 
 class H5DataProvider {
   public readonly filepath: string;
@@ -215,7 +215,7 @@ function App() {
       </div>
       {activeTab === '2D' && (
         <div className="ImageViewer">
-          <ImageVis
+          <HeatmapLODVis
             dataShape={[150_000, 150_000]}
             abscissaDomain={[-2.5, 1.5]}
             ordinateDomain={[-2, 2]}
