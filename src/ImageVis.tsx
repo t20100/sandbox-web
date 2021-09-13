@@ -195,9 +195,9 @@ function mandelbrot(
   const rowStep = (ordinateDomain[1] - ordinateDomain[0]) / height;
 
   for (let row = 0; row < height; row++) {
-    const cImag = ordinateDomain[0] + row * rowStep;
+    const cImag = ordinateDomain[0] + (row + 0.5) * rowStep;
     for (let col = 0; col < width; col++) {
-      const cReal = abscissaDomain[0] + col * colStep;
+      const cReal = abscissaDomain[0] + (col + 0.5) * colStep;
       let z = [cReal, cImag];
       let z2 = [cReal ** 2, cImag ** 2];
       for (let i = 1; i < niteration; i++) {
@@ -277,6 +277,7 @@ function MyMesh(props: MyMeshProps) {
       ? visSize.height / 2
       : height / (2 * zoom));
 
+  // TODO fix array jumps
   const imageShape: Domain = [
     visibleSlice.yLODSlice[1] - visibleSlice.yLODSlice[0],
     visibleSlice.xLODSlice[1] - visibleSlice.xLODSlice[0],
