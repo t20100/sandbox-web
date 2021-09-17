@@ -1,26 +1,7 @@
 import { VisCanvas, PanZoomMesh, useAxisSystemContext } from '@h5web/lib';
-import styles from './HeatmapLODVis.module.css';
-import { useThree, useFrame } from '@react-three/fiber';
-import { useState } from 'react';
+import { useThree } from '@react-three/fiber';
 
 function MandelbrotMesh() {
-  // re-render on zoom&pan: TODO issue here => 2 renderings
-  const [previous_zoom, setZoom] = useState(1);
-  const [previous_position, setPosition] = useState({ x: 0, y: 0, z: 0 });
-
-  useFrame((state) => {
-    const { position, zoom } = state.camera;
-    if (zoom !== previous_zoom) {
-      setZoom(zoom);
-    }
-    if (
-      position.x !== previous_position.x ||
-      position.y !== previous_position.y
-    ) {
-      setPosition(position.clone());
-    }
-  });
-
   const {
     abscissaScale,
     ordinateScale,
@@ -30,16 +11,10 @@ function MandelbrotMesh() {
   const { position, zoom } = useThree((state) => state.camera);
   const { width, height } = useThree((state) => state.size);
 
-  // Find visible domains from camera's zoom and position
   const xMinVisible = abscissaScale.invert(-width / (2 * zoom) + position.x);
   const xMaxVisible = abscissaScale.invert(width / (2 * zoom) + position.x);
   const yMinVisible = ordinateScale.invert(-height / (2 * zoom) + position.y);
   const yMaxVisible = ordinateScale.invert(height / (2 * zoom) + position.y);
-
-  const xMin = abscissaScale(xMinVisible) + width / (2 * zoom);
-  const xMax = abscissaScale(xMaxVisible) + width / (2 * zoom);
-  const yMin = ordinateScale(yMinVisible) + height / (2 * zoom);
-  const yMax = ordinateScale(yMaxVisible) + height / (2 * zoom);
 
   const shader = {
     uniforms: {
@@ -92,9 +67,9 @@ function MandelbrotMesh() {
   return (
     <mesh
       scale={[1, ordinateConfig.flip ? -1 : 1, 1]}
-      position={[xMin, yMin, 0]}
+      position={[position.x, position.y, 0]}
     >
-      <planeGeometry args={[xMax - xMin, yMax - yMin]} />
+      <planeGeometry args={[width, height]} />
       <shaderMaterial args={[shader]} />
     </mesh>
   );
@@ -102,23 +77,21 @@ function MandelbrotMesh() {
 
 function MandelbrotVis() {
   return (
-    <figure className={styles.root}>
-      <VisCanvas
-        abscissaConfig={{
-          visDomain: [-2.5, 1.5],
-          showGrid: false,
-        }}
-        ordinateConfig={{
-          visDomain: [-2, 2],
-          showGrid: false,
-        }}
-        visRatio={1}
-        title="Mandelbrot"
-      >
-        <PanZoomMesh />
-        <MandelbrotMesh />
-      </VisCanvas>
-    </figure>
+    <VisCanvas
+      abscissaConfig={{
+        visDomain: [-2.5, 1.5],
+        showGrid: false,
+      }}
+      ordinateConfig={{
+        visDomain: [-2, 2],
+        showGrid: false,
+      }}
+      visRatio={1}
+      title="Mandelbrot"
+    >
+      <PanZoomMesh />
+      <MandelbrotMesh />
+    </VisCanvas>
   );
 }
 
