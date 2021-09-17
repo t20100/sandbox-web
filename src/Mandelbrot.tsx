@@ -1,25 +1,9 @@
-import {
-  VisCanvas,
-  PanZoomMesh,
-  Domain,
-  useAxisSystemContext,
-} from '@h5web/lib';
+import { VisCanvas, PanZoomMesh, useAxisSystemContext } from '@h5web/lib';
 import styles from './HeatmapLODVis.module.css';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useState } from 'react';
 
-interface VisibleExtent {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  xDomain: Domain;
-  yDomain: Domain;
-  xDataPerPixel: number;
-  yDataPerPixel: number;
-}
-
-function useVisibleExtent(): VisibleExtent {
+function MandelbrotMesh() {
   // re-render on zoom&pan: TODO issue here => 2 renderings
   const [previous_zoom, setZoom] = useState(1);
   const [previous_position, setPosition] = useState({ x: 0, y: 0, z: 0 });
@@ -37,55 +21,36 @@ function useVisibleExtent(): VisibleExtent {
     }
   });
 
-  const { abscissaScale, ordinateScale } = useAxisSystemContext();
-
-  const { position, zoom } = useThree((state) => state.camera);
-  const { width, height } = useThree((state) => state.size);
-
-  // Find visible domains from camera's zoom and position
-  const xMin = abscissaScale.invert(-width / (2 * zoom) + position.x);
-  const xMax = abscissaScale.invert(width / (2 * zoom) + position.x);
-  const yMin = ordinateScale.invert(-height / (2 * zoom) + position.y);
-  const yMax = ordinateScale.invert(height / (2 * zoom) + position.y);
-
-  return {
-    x: xMin,
-    y: yMin,
-    width: xMax - xMin,
-    height: yMax - yMin,
-    xDomain: [xMin, xMax],
-    yDomain: [yMin, yMax],
-    xDataPerPixel: (xMax - xMin) / width,
-    yDataPerPixel: (yMax - yMin) / height,
-  };
-}
-
-function MandelbrotMesh() {
-  const visibleExtent = useVisibleExtent();
-  const { zoom } = useThree((state) => state.camera);
-  const { width, height } = useThree((state) => state.size);
-
   const {
     abscissaScale,
     ordinateScale,
     ordinateConfig,
   } = useAxisSystemContext();
 
-  const xMin = abscissaScale(visibleExtent.xDomain[0]) + width / (2 * zoom);
-  const xMax = abscissaScale(visibleExtent.xDomain[1]) + width / (2 * zoom);
-  const yMin = ordinateScale(visibleExtent.yDomain[0]) + height / (2 * zoom);
-  const yMax = ordinateScale(visibleExtent.yDomain[1]) + height / (2 * zoom);
+  const { position, zoom } = useThree((state) => state.camera);
+  const { width, height } = useThree((state) => state.size);
+
+  // Find visible domains from camera's zoom and position
+  const xMinVisible = abscissaScale.invert(-width / (2 * zoom) + position.x);
+  const xMaxVisible = abscissaScale.invert(width / (2 * zoom) + position.x);
+  const yMinVisible = ordinateScale.invert(-height / (2 * zoom) + position.y);
+  const yMaxVisible = ordinateScale.invert(height / (2 * zoom) + position.y);
+
+  const xMin = abscissaScale(xMinVisible) + width / (2 * zoom);
+  const xMax = abscissaScale(xMaxVisible) + width / (2 * zoom);
+  const yMin = ordinateScale(yMinVisible) + height / (2 * zoom);
+  const yMax = ordinateScale(yMaxVisible) + height / (2 * zoom);
 
   const shader = {
     uniforms: {
       niteration: { value: 100 },
       offset: {
         type: 'v',
-        value: [visibleExtent.x, visibleExtent.y],
+        value: [xMinVisible, yMinVisible],
       },
       size: {
         type: 'v',
-        value: [visibleExtent.width, visibleExtent.height],
+        value: [xMaxVisible - xMinVisible, yMaxVisible - yMinVisible],
       },
     },
     vertexShader: `
