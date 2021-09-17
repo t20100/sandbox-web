@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import Slider from '@material-ui/core/Slider';
 import HeatmapLODVis from './HeatmapLODVis';
+import MandelbrotVis from './Mandelbrot';
 
 class H5DataProvider {
   public readonly filepath: string;
@@ -189,7 +190,7 @@ function App() {
     }
   });
 
-  const [activeTab, setActiveTab] = useState('2D');
+  const [activeTab, setActiveTab] = useState('Mandelbrot');
 
   return (
     <div>
@@ -202,6 +203,17 @@ function App() {
           }}
         >
           3D
+        </button>
+        <button
+          type="button"
+          style={{
+            fontWeight: activeTab !== 'Mandelbrot' ? undefined : 'bold',
+          }}
+          onClick={() => {
+            setActiveTab('Mandelbrot');
+          }}
+        >
+          Mandelbrot
         </button>
         <button
           type="button"
@@ -225,6 +237,11 @@ function App() {
             colorMap={colorMap}
             invertColorMap={invertColorMap}
           />
+        </div>
+      )}
+      {activeTab === 'Mandelbrot' && (
+        <div className="MandelbrotDemo">
+          <MandelbrotVis />
         </div>
       )}
       {activeTab === '3D' && (
